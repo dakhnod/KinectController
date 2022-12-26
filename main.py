@@ -10,6 +10,7 @@ import pynput
 import win32gui
 import body as game_body
 import movement_reader
+import controller
 
 if sys.hexversion >= 0x03000000:
     import _thread as thread
@@ -61,9 +62,8 @@ class BodyGameRuntime(object):
         self.left_foot_up = None
         self.foot_switch_time = None
         self.is_running = None
-        self.keyboard = pynput.keyboard.Controller()
 
-        self.reader = movement_reader.MovementReader()
+        self.controller = controller.KinectController()
 
     def draw_body_bone(self, joints, jointPoints, color, joint0, joint1):
         joint0State = joints[joint0].TrackingState
@@ -195,21 +195,28 @@ class BodyGameRuntime(object):
             joint_orientation = joint_orientations[j]
             body.add_joint(j, joint.Position, joint_orientation.Orientation, joint_point)
 
-        self.reader.parse_movement(body)
-        if self.reader.isHandUp:
+        result = self.controller.parse_body(body)
+
+        if result == None:
+            self.draw_body(joints, joint_points, pygame.color.THECOLORS["black"])
+            return
+
+        self.draw_body(joints, joint_points, pygame.color.THECOLORS[result['config']['color']])
+
+        if result['parser'].isHandUp:
             self.draw_joint_circle(body.get_joint_HandLeft())
             self.draw_joint_circle(body.get_joint_HandRight())
-        if self.reader.isRunning:
-            if self.reader.isRunningLeft:
+        if result['parser'].isRunning:
+            if result['parser'].isRunningLeft:
                 self.draw_joint_circle(body.get_joint_FootLeft())
             else:
                 self.draw_joint_circle(body.get_joint_FootRight())
-        if self.reader.isJumping:
+        if result['parser'].isJumping:
             self.draw_joint_horizontal_line(body.get_joint_FootLeft())
             self.draw_joint_horizontal_line(body.get_joint_FootRight())
-        if self.reader.isDodging:
+        if result['parser'].isDodging:
             self.draw_joint_horizontal_line(body.get_joint_Head())
-        if self.reader.isUsingItem:
+        if result['parser'].isUsingItem:
             self.draw_joint_circle(body.get_joint_HandLeft(), (255, 0, 0))
             self.draw_joint_circle(body.get_joint_HandRight(), (255, 0, 0))
 
@@ -251,8 +258,6 @@ class BodyGameRuntime(object):
                     joint_points = self._kinect.body_joints_to_color_space(joints)
 
                     self.parse_game_controls(joints, body.joint_orientations, joint_points)
-
-                    self.draw_body(joints, joint_points, SKELETON_COLORS[i])
 
             # --- copy back buffer surface pixels to the screen, resize it if needed and keep aspect ratio
             # --- (screen size may be different from Kinect's color frame size) 

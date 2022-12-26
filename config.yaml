@@ -1,0 +1,33 @@
+---
+players:
+  - color: red
+    side: left
+    actions:
+      - action: run_right
+        key: d
+      - action: run_left
+        key: a
+      - action: jump
+        key: space
+      - action: hook
+        key: shift_l
+      - action: dodge
+        key: s
+      - action: item
+        key: e
+  - color: blue
+    side: right
+    actions:
+      - action: run_right
+        key: right
+      - action: run_left
+        key: left
+      - action: jump
+        key: ctrl_r 
+      - action: hook
+        key: shift_r
+      - action: dodge
+        key: down
+      - action: item
+        key: i
+      
